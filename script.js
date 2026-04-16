@@ -168,7 +168,7 @@ scoreSheetWrap.addEventListener('click', (event) => {
   }
   const word = btn.dataset.word;
   const step = RAVLT_FLOW[appState.flowIndex];
-  if (!step || step.code === 'DELAY' || step.list !== 'a') {
+  if (!step || step.code === 'DELAY') {
     return;
   }
   const idx = appState.currentTrialOrder.indexOf(word);
@@ -204,10 +204,6 @@ setupForm.addEventListener('submit', (event) => {
 
 clearTrialBtn.addEventListener('click', () => {
   appState.currentTrialOrder = [];
-  const step = RAVLT_FLOW[appState.flowIndex];
-  if (step && step.list === 'b') {
-    renderWords();
-  }
   renderScoreSheet();
   updateSelectedCount();
 });
@@ -288,14 +284,8 @@ function renderCurrentStep() {
 
   renderInstruction(step.code);
 
-  if (step.list === 'b') {
-    scoreSheetWrap.classList.add('hidden');
-    wordButtons.classList.remove('hidden');
-    renderWords();
-  } else {
-    scoreSheetWrap.classList.remove('hidden');
-    wordButtons.classList.add('hidden');
-  }
+  scoreSheetWrap.classList.remove('hidden');
+  wordButtons.classList.add('hidden');
 
   updateSelectedCount();
 }
@@ -379,11 +369,17 @@ function renderScoreSheet() {
     return;
   }
 
-  const trialCodes = ['A1', 'A2', 'A3', 'A4', 'A5', 'B1', 'A6', 'A7'];
   const currentCode = RAVLT_FLOW[appState.flowIndex]?.code;
-  const isActiveATrial = currentCode && currentCode !== 'DELAY' && currentCode !== 'B1';
+
+  if (currentCode === 'B1') {
+    renderBScoreSheet();
+    return;
+  }
+
+  const trialCodes = ['A1', 'A2', 'A3', 'A4', 'A5', 'B1', 'A6', 'A7'];
+  const isActiveATrial = currentCode && currentCode !== 'DELAY';
   const currentTrialMap =
-    currentCode && currentCode !== 'DELAY' ? buildRecallOrderMap(appState.currentTrialOrder) : null;
+    isActiveATrial ? buildRecallOrderMap(appState.currentTrialOrder) : null;
 
   const trialMaps = Object.fromEntries(
     trialCodes.map((code) => {
@@ -433,6 +429,38 @@ function renderScoreSheet() {
       <tbody>
         ${renderWordRows(aWords)}
         <tr class="sum-row"><td>SUM</td>${sumRow}</tr>
+      </tbody>
+    </table>
+  `;
+}
+
+function renderBScoreSheet() {
+  const bWords = WORD_LISTS[appState.metadata.listVersion].b;
+  const bMap = buildRecallOrderMap(appState.currentTrialOrder);
+
+  const rows = bWords
+    .map((word) => {
+      const isSelected = appState.currentTrialOrder.includes(word);
+      const orderNum = isSelected ? appState.currentTrialOrder.indexOf(word) + 1 : '';
+      const wordCell = `<td class="word-cell"><button class="table-word-btn${isSelected ? ' selected' : ''}" data-word="${word}">${word}${isSelected ? ` (${orderNum})` : ''}</button></td>`;
+      const value = bMap[word] ?? '';
+      return `<tr>${wordCell}<td class="order-cell current-cell">${value}</td></tr>`;
+    })
+    .join('');
+
+  const sum = Object.keys(bMap).length;
+
+  scoreSheetWrap.innerHTML = `
+    <table class="score-sheet">
+      <thead>
+        <tr>
+          <th>Word</th>
+          <th>B1</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows}
+        <tr class="sum-row"><td>SUM</td><td class="sum-cell">${sum}</td></tr>
       </tbody>
     </table>
   `;
