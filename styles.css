@@ -115,8 +115,24 @@ button:disabled {
   font-size: 13px;
 }
 
-.score-sheet .current-row {
+.score-sheet .order-cell,
+.score-sheet .sum-cell {
+  text-align: center;
+  min-width: 44px;
+}
+
+.score-sheet .current-cell {
   background: #eff6ff;
+}
+
+.score-sheet .list-header td {
+  background: #f8fafc;
+  font-weight: 700;
+}
+
+.score-sheet .sum-row td {
+  font-weight: 700;
+  background: #f1f5f9;
 }
 
 .word-grid {

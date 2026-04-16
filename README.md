@@ -12,9 +12,10 @@ Standalone RAVLT assessment interface for use in JATOS/Mindprobe sessions.
   - Post-interference immediate recall A6 (without re-reading List A)
   - Delay period timer
   - Delayed recall A7
-- Trial-specific examiner instructions aligned to the AVLT flow (including no re-reading prompts for A6/A7).
-- Live scoring-sheet style table during administration with per-trial scores and recalled words.
-- Word-by-word scoring using clickable buttons during each recall trial.
+- Trial-specific examiner instructions using official AVLT-style wording for A1-A5, B1, A6, and A7.
+- Live scoring sheet with words arranged vertically and trials A1-A5, B1, A6, A7 in columns.
+- Word-by-word click-order scoring: clicking words fills order numbers (1, 2, 3...) in the current trial column.
+- Per-trial SUM row that counts recalled words in each trial column.
 - Trial-by-trial score capture with recalled words saved per trial.
 - Results summary with JSON and CSV export.
 - Optional JATOS integration: if `window.jatos.submitResultData` is available, result data is submitted automatically at completion.
