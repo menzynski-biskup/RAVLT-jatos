@@ -129,6 +129,13 @@ button:disabled {
   gap: 8px;
 }
 
+.status-message {
+  min-height: 20px;
+  margin: 6px 0 0;
+  color: #065f46;
+  font-weight: 600;
+}
+
 #clearTrialBtn {
   background: #6b7280;
   border-color: #6b7280;

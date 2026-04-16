@@ -85,6 +85,20 @@ const RAVLT_FLOW = [
   { code: 'A7', list: 'a', label: 'Delayed Recall (List A)' }
 ];
 
+const CSV_COLUMNS = [
+  { header: 'participantId', getValue: (payload, trial) => payload.participant.participantId },
+  { header: 'group', getValue: (payload, trial) => payload.participant.group },
+  { header: 'session', getValue: (payload, trial) => payload.participant.session },
+  { header: 'timeOfDay', getValue: (payload, trial) => payload.participant.timeOfDay },
+  { header: 'listVersion', getValue: (payload, trial) => payload.participant.listVersion },
+  { header: 'code', getValue: (payload, trial) => trial.code },
+  { header: 'label', getValue: (payload, trial) => trial.label },
+  { header: 'score', getValue: (payload, trial) => trial.score },
+  { header: 'delayDurationSeconds', getValue: (payload, trial) => trial.delayDurationSeconds ?? '' },
+  { header: 'recalledWords', getValue: (payload, trial) => trial.recalledWords.join('|') },
+  { header: 'capturedAt', getValue: (payload, trial) => trial.capturedAt }
+];
+
 const appState = {
   metadata: null,
   startedAt: null,
@@ -112,6 +126,7 @@ const selectedCount = document.getElementById('selectedCount');
 const clearTrialBtn = document.getElementById('clearTrialBtn');
 const nextTrialBtn = document.getElementById('nextTrialBtn');
 const summaryMeta = document.getElementById('summaryMeta');
+const submissionStatus = document.getElementById('submissionStatus');
 const summaryTableWrap = document.getElementById('summaryTableWrap');
 const downloadJsonBtn = document.getElementById('downloadJsonBtn');
 const downloadCsvBtn = document.getElementById('downloadCsvBtn');
@@ -304,9 +319,22 @@ function finishAssessment() {
   const payload = getResultPayload();
   summaryMeta.textContent = `Participant ${payload.participant.participantId}, list ${payload.participant.listVersion}, completed ${new Date(payload.finishedAt).toLocaleString()}.`;
   renderSummaryTable(payload.trials);
+  submissionStatus.textContent = '';
 
   if (window.jatos && typeof window.jatos.submitResultData === 'function') {
-    window.jatos.submitResultData(JSON.stringify(payload));
+    try {
+      window.jatos.submitResultData(
+        JSON.stringify(payload),
+        () => {
+          submissionStatus.textContent = 'JATOS submission succeeded.';
+        },
+        () => {
+          submissionStatus.textContent = 'JATOS submission failed. Please export JSON/CSV as backup.';
+        }
+      );
+    } catch (error) {
+      submissionStatus.textContent = 'JATOS submission failed. Please export JSON/CSV as backup.';
+    }
   }
 }
 
@@ -333,20 +361,10 @@ function getResultPayload() {
 }
 
 function toCsv(payload) {
-  const header = ['participantId', 'group', 'session', 'timeOfDay', 'listVersion', 'code', 'label', 'score', 'delayDurationSeconds', 'recalledWords', 'capturedAt'];
-  const rows = payload.trials.map((trial) => [
-    payload.participant.participantId,
-    payload.participant.group,
-    payload.participant.session,
-    payload.participant.timeOfDay,
-    payload.participant.listVersion,
-    trial.code,
-    trial.label,
-    trial.score,
-    trial.delayDurationSeconds ?? '',
-    trial.recalledWords.join('|'),
-    trial.capturedAt
-  ]);
+  const header = CSV_COLUMNS.map((column) => column.header);
+  const rows = payload.trials.map((trial) =>
+    CSV_COLUMNS.map((column) => column.getValue(payload, trial))
+  );
 
   return [header, ...rows]
     .map((row) => row.map((value) => `"${String(value ?? '').replaceAll('"', '""')}"`).join(','))
@@ -367,5 +385,9 @@ function downloadFile(filename, content, mimeType) {
 
 function getFilePrefix() {
   const id = appState.metadata?.participantId || 'participant';
-  return `${id}-ravlt-${new Date().toISOString().replace(/[:.]/g, '-')}`;
+  return `${id}-ravlt-${formatTimestampForFilename(new Date())}`;
+}
+
+function formatTimestampForFilename(date) {
+  return date.toISOString().replace(/[:.]/g, '-');
 }
