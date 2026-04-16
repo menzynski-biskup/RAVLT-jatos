@@ -85,15 +85,33 @@ const RAVLT_FLOW = [
   { code: 'A7', list: 'a', label: 'Delayed Recall (List A)' }
 ];
 
+const REPEATED_TRIAL_PROMPT =
+  'Now I am going to read the same words again, and once again when I stop I want you to tell me as many words as you can remember, including words you said just now, at the first trial. It doesn’t matter in what order you say them. Just say as many words as you can remember from the list whether or not you said them already at previous attempts.';
+
 const INSTRUCTIONS_BY_CODE = {
-  A1: 'Read List A aloud at a steady pace (about one word per second), then record recalled words.',
-  A2: 'Read List A aloud again at the same pace, then record recalled words.',
-  A3: 'Read List A aloud again, then record recalled words.',
-  A4: 'Read List A aloud again, then record recalled words.',
-  A5: 'Read List A aloud one final time for learning trials, then record recalled words.',
-  B1: 'Read List B aloud once, then record recalled words from List B.',
-  A6: 'Do not read any list now. Ask for immediate recall of the original List A and record responses.',
-  A7: 'Do not read any list now. Ask for delayed recall of the original List A and record responses.'
+  A1: {
+    participant:
+      'I am going to read a list of words. Listen carefully, for when I stop you are to repeat back as many words as you can remember. It doesn’t matter in what order you repeat them. Just try to remember as many as you can.',
+    examiner:
+      'Read List A with ~1-second interval between words. Do not give feedback on correct responses, repetitions, or errors.'
+  },
+  A2: {
+    participant: REPEATED_TRIAL_PROMPT,
+    examiner: 'Use this same participant instruction for Trials 3 through 5 (A3, A4, A5).'
+  },
+  A3: { participant: REPEATED_TRIAL_PROMPT, examiner: 'Read List A again.' },
+  A4: { participant: REPEATED_TRIAL_PROMPT, examiner: 'Read List A again.' },
+  A5: { participant: REPEATED_TRIAL_PROMPT, examiner: 'Read List A again.' },
+  B1: {
+    participant:
+      'Now I’m going to read a second list of words. Listen carefully, for when I stop you are to repeat back as many words as you can remember. It doesn’t matter in what order you repeat them. Just try to remember as many as you can.',
+    examiner: 'Read List B with ~1-second interval between words.'
+  },
+  A6: { participant: 'Now tell me all the words that you can remember from the first list.' },
+  A7: {
+    participant:
+      'A while ago, I read a list of words to you several times, and you had to repeat back the words. Tell me the words from that list.'
+  }
 };
 
 const CSV_COLUMNS = [
@@ -115,7 +133,7 @@ const appState = {
   startedAt: null,
   finishedAt: null,
   flowIndex: 0,
-  selectedWords: new Set(),
+  currentTrialOrder: [],
   trials: [],
   delayStartedAt: null,
   delayStoppedAt: null,
@@ -143,6 +161,26 @@ const downloadJsonBtn = document.getElementById('downloadJsonBtn');
 const downloadCsvBtn = document.getElementById('downloadCsvBtn');
 const scoreSheetWrap = document.getElementById('scoreSheetWrap');
 
+scoreSheetWrap.addEventListener('click', (event) => {
+  const btn = event.target.closest('[data-word]');
+  if (!btn) {
+    return;
+  }
+  const word = btn.dataset.word;
+  const step = RAVLT_FLOW[appState.flowIndex];
+  if (!step || step.code === 'DELAY') {
+    return;
+  }
+  const idx = appState.currentTrialOrder.indexOf(word);
+  if (idx >= 0) {
+    appState.currentTrialOrder.splice(idx, 1);
+  } else {
+    appState.currentTrialOrder.push(word);
+  }
+  renderScoreSheet();
+  updateSelectedCount();
+});
+
 setupForm.addEventListener('submit', (event) => {
   event.preventDefault();
   const formData = new FormData(setupForm);
@@ -165,8 +203,8 @@ setupForm.addEventListener('submit', (event) => {
 });
 
 clearTrialBtn.addEventListener('click', () => {
-  appState.selectedWords.clear();
-  renderWords();
+  appState.currentTrialOrder = [];
+  renderScoreSheet();
   updateSelectedCount();
 });
 
@@ -180,12 +218,13 @@ nextTrialBtn.addEventListener('click', () => {
     code: step.code,
     label: step.label,
     listType: step.list,
-    recalledWords: [...appState.selectedWords],
-    score: appState.selectedWords.size,
+    recalledWords: [...appState.currentTrialOrder],
+    recallOrder: buildRecallOrderMap(appState.currentTrialOrder),
+    score: appState.currentTrialOrder.length,
     capturedAt: new Date().toISOString()
   });
 
-  appState.selectedWords.clear();
+  appState.currentTrialOrder = [];
   appState.flowIndex += 1;
   renderCurrentStep();
 });
@@ -240,23 +279,25 @@ function renderCurrentStep() {
   }
 
   delayPanel.classList.add('hidden');
-  wordButtons.classList.remove('hidden');
   clearTrialBtn.disabled = false;
   nextTrialBtn.disabled = false;
 
-  phaseInstruction.textContent = getStepInstruction(step.code);
+  renderInstruction(step.code);
 
-  renderWords();
+  scoreSheetWrap.classList.remove('hidden');
+  wordButtons.classList.add('hidden');
+
   updateSelectedCount();
 }
 
 function enterDelayStep() {
   wordButtons.classList.add('hidden');
+  scoreSheetWrap.classList.remove('hidden');
   clearTrialBtn.disabled = true;
   nextTrialBtn.disabled = true;
   delayPanel.classList.remove('hidden');
-  phaseInstruction.textContent =
-    'Keep this page open while the participant performs other tasks. Click “Start delayed recall” when they return.';
+  phaseInstruction.innerHTML =
+    '<p>Keep this page open while the participant performs other tasks. Click “Start delayed recall” when they return.</p>';
   renderScoreSheet();
 
   appState.delayStartedAt = new Date().toISOString();
@@ -277,17 +318,21 @@ function renderWords() {
   wordButtons.innerHTML = '';
 
   for (const word of words) {
+    const orderIndex = appState.currentTrialOrder.indexOf(word);
+    const orderNumber = orderIndex >= 0 ? orderIndex + 1 : '';
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = `word-btn${appState.selectedWords.has(word) ? ' selected' : ''}`;
-    button.textContent = word;
+    button.className = `word-btn${orderNumber ? ' selected' : ''}`;
+    button.textContent = orderNumber ? `${word} (${orderNumber})` : word;
     button.addEventListener('click', () => {
-      if (appState.selectedWords.has(word)) {
-        appState.selectedWords.delete(word);
+      const currentIndex = appState.currentTrialOrder.indexOf(word);
+      if (currentIndex >= 0) {
+        appState.currentTrialOrder.splice(currentIndex, 1);
       } else {
-        appState.selectedWords.add(word);
+        appState.currentTrialOrder.push(word);
       }
-      button.classList.toggle('selected');
+      renderWords();
+      renderScoreSheet();
       updateSelectedCount();
     });
     wordButtons.appendChild(button);
@@ -295,33 +340,134 @@ function renderWords() {
 }
 
 function updateSelectedCount() {
-  selectedCount.textContent = String(appState.selectedWords.size);
+  selectedCount.textContent = String(appState.currentTrialOrder.length);
 }
 
-function getStepInstruction(code) {
-  return (
-    INSTRUCTIONS_BY_CODE[code] ||
-    'Record recalled words for this trial, then click “Save trial & next”.'
-  );
+function renderInstruction(code) {
+  const instruction = INSTRUCTIONS_BY_CODE[code];
+  if (!instruction) {
+    phaseInstruction.innerHTML = '<p>Record recalled words for this trial, then click \u201cSave trial &amp; next\u201d.</p>';
+    return;
+  }
+  if (typeof instruction === 'string') {
+    phaseInstruction.innerHTML = `<p>${instruction}</p>`;
+    return;
+  }
+  let html = '';
+  if (instruction.participant) {
+    html += `<div class="instruction-participant"><span class="instruction-label">Read to participant</span><p>${instruction.participant}</p></div>`;
+  }
+  if (instruction.examiner) {
+    html += `<div class="instruction-examiner"><span class="instruction-label">Examiner notes</span><p>${instruction.examiner}</p></div>`;
+  }
+  phaseInstruction.innerHTML = html;
 }
 
 function renderScoreSheet() {
-  const scoringSteps = RAVLT_FLOW.filter((step) => step.code !== 'DELAY');
+  if (!appState.metadata) {
+    scoreSheetWrap.innerHTML = '';
+    return;
+  }
+
   const currentCode = RAVLT_FLOW[appState.flowIndex]?.code;
-  const rows = scoringSteps
-    .map((step) => {
-      const savedTrial = appState.trials.find((trial) => trial.code === step.code);
-      const rowClass = step.code === currentCode ? ' class="current-row"' : '';
-      return `<tr${rowClass}><td>${step.code}</td><td>${step.list?.toUpperCase() || ''}</td><td>${
-        savedTrial?.score ?? ''
-      }</td><td>${savedTrial?.recalledWords.join('; ') ?? ''}</td></tr>`;
+
+  if (currentCode === 'B1') {
+    renderBScoreSheet();
+    return;
+  }
+
+  const trialCodes = ['A1', 'A2', 'A3', 'A4', 'A5', 'B1', 'A6', 'A7'];
+  const isActiveATrial = currentCode && currentCode !== 'DELAY';
+  const currentTrialMap =
+    isActiveATrial ? buildRecallOrderMap(appState.currentTrialOrder) : null;
+
+  const trialMaps = Object.fromEntries(
+    trialCodes.map((code) => {
+      const savedTrial = appState.trials.find((trial) => trial.code === code);
+      if (savedTrial) {
+        return [code, savedTrial.recallOrder || buildRecallOrderMap(savedTrial.recalledWords || [])];
+      }
+      if (code === currentCode && currentTrialMap) {
+        return [code, currentTrialMap];
+      }
+      return [code, {}];
+    })
+  );
+
+  const renderWordRows = (words) =>
+    words
+      .map((word) => {
+        const isSelected = appState.currentTrialOrder.includes(word);
+        const orderNum = isSelected ? appState.currentTrialOrder.indexOf(word) + 1 : '';
+        const wordCell = isActiveATrial
+          ? `<td class="word-cell"><button class="table-word-btn${isSelected ? ' selected' : ''}" data-word="${word}">${word}${isSelected ? ` (${orderNum})` : ''}</button></td>`
+          : `<td>${word}</td>`;
+        const cells = trialCodes
+          .map((code) => {
+            const isCurrent = code === currentCode ? ' current-cell' : '';
+            const value = trialMaps[code]?.[word] ?? '';
+            return `<td class="order-cell${isCurrent}">${value}</td>`;
+          })
+          .join('');
+        return `<tr>${wordCell}${cells}</tr>`;
+      })
+      .join('');
+
+  const aWords = WORD_LISTS[appState.metadata.listVersion].a;
+  const sumRow = trialCodes
+    .map((code) => `<td class="sum-cell">${Object.keys(trialMaps[code] || {}).length}</td>`)
+    .join('');
+
+  scoreSheetWrap.innerHTML = `
+    <table class="score-sheet">
+      <thead>
+        <tr>
+          <th>Word</th>
+          ${trialCodes.map((code) => `<th>${code}</th>`).join('')}
+        </tr>
+      </thead>
+      <tbody>
+        ${renderWordRows(aWords)}
+        <tr class="sum-row"><td>SUM</td>${sumRow}</tr>
+      </tbody>
+    </table>
+  `;
+}
+
+function renderBScoreSheet() {
+  const bWords = WORD_LISTS[appState.metadata.listVersion].b;
+  const bMap = buildRecallOrderMap(appState.currentTrialOrder);
+
+  const rows = bWords
+    .map((word) => {
+      const isSelected = appState.currentTrialOrder.includes(word);
+      const orderNum = isSelected ? appState.currentTrialOrder.indexOf(word) + 1 : '';
+      const wordCell = `<td class="word-cell"><button class="table-word-btn${isSelected ? ' selected' : ''}" data-word="${word}">${word}${isSelected ? ` (${orderNum})` : ''}</button></td>`;
+      const value = bMap[word] ?? '';
+      return `<tr>${wordCell}<td class="order-cell current-cell">${value}</td></tr>`;
     })
     .join('');
 
-  scoreSheetWrap.innerHTML =
-    '<table class="score-sheet"><thead><tr><th>Trial</th><th>List</th><th>Score</th><th>Recalled words</th></tr></thead><tbody>' +
-    rows +
-    '</tbody></table>';
+  const sum = Object.keys(bMap).length;
+
+  scoreSheetWrap.innerHTML = `
+    <table class="score-sheet">
+      <thead>
+        <tr>
+          <th>Word</th>
+          <th>B1</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows}
+        <tr class="sum-row"><td>SUM</td><td class="sum-cell">${sum}</td></tr>
+      </tbody>
+    </table>
+  `;
+}
+
+function buildRecallOrderMap(words) {
+  return Object.fromEntries(words.map((word, index) => [word, index + 1]));
 }
 
 function stopDelayTimer() {

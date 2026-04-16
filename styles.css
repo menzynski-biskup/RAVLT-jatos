@@ -92,8 +92,82 @@ button:disabled {
   font-size: 13px;
 }
 
-.instruction {
+.instruction-wrap {
   margin: 12px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.instruction-participant,
+.instruction-examiner {
+  border-radius: 8px;
+  padding: 10px 14px;
+  border-left: 4px solid transparent;
+}
+
+.instruction-participant {
+  background: #eff6ff;
+  border-left-color: #3b82f6;
+}
+
+.instruction-examiner {
+  background: #fffbeb;
+  border-left-color: #f59e0b;
+}
+
+.instruction-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.instruction-participant .instruction-label {
+  color: #1d4ed8;
+}
+
+.instruction-examiner .instruction-label {
+  color: #b45309;
+}
+
+.instruction-participant p,
+.instruction-examiner p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.table-word-btn {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #1f2937;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 7px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  width: 100%;
+  text-align: center;
+  transition: background 0.1s, border-color 0.1s;
+}
+
+.table-word-btn:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+}
+
+.table-word-btn.selected {
+  background: #16a34a;
+  border-color: #15803d;
+  color: #fff;
+  font-weight: 600;
+}
+
+.table-word-btn.selected:hover {
+  background: #15803d;
 }
 
 .score-sheet-wrap {
@@ -110,32 +184,68 @@ button:disabled {
 .score-sheet th,
 .score-sheet td {
   border: 1px solid #d1d5db;
-  padding: 6px 8px;
+  padding: 5px 8px;
   text-align: left;
   font-size: 13px;
 }
 
-.score-sheet .current-row {
+.score-sheet .order-cell,
+.score-sheet .sum-cell {
+  text-align: center;
+  min-width: 36px;
+}
+
+.score-sheet .word-cell {
+  padding: 4px 6px;
+  min-width: 110px;
+}
+
+.score-sheet .current-cell {
   background: #eff6ff;
+}
+
+.score-sheet .list-header td {
+  background: #f8fafc;
+  font-weight: 700;
+}
+
+.score-sheet .sum-row td {
+  font-weight: 700;
+  background: #f1f5f9;
 }
 
 .word-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
   margin-bottom: 12px;
 }
 
 .word-btn {
-  background: #fff;
+  background: #f8fafc;
   color: #1f2937;
   border: 1px solid #cbd5e1;
+  font-size: 16px;
+  font-weight: 500;
+  padding: 18px 10px;
+  text-align: center;
+  border-radius: 10px;
+  transition: background 0.1s, border-color 0.1s;
+}
+
+.word-btn:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
 }
 
 .word-btn.selected {
   background: #16a34a;
   border-color: #15803d;
   color: #fff;
+}
+
+.word-btn.selected:hover {
+  background: #15803d;
 }
 
 .delay-panel {
