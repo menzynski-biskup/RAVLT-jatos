@@ -96,6 +96,29 @@ button:disabled {
   margin: 12px 0;
 }
 
+.score-sheet-wrap {
+  overflow-x: auto;
+  margin-bottom: 12px;
+}
+
+.score-sheet {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+}
+
+.score-sheet th,
+.score-sheet td {
+  border: 1px solid #d1d5db;
+  padding: 6px 8px;
+  text-align: left;
+  font-size: 13px;
+}
+
+.score-sheet .current-row {
+  background: #eff6ff;
+}
+
 .word-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));

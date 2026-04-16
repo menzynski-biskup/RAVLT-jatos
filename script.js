@@ -85,6 +85,17 @@ const RAVLT_FLOW = [
   { code: 'A7', list: 'a', label: 'Delayed Recall (List A)' }
 ];
 
+const INSTRUCTIONS_BY_CODE = {
+  A1: 'Read List A aloud at a steady pace (about one word per second), then record recalled words.',
+  A2: 'Read List A aloud again at the same pace, then record recalled words.',
+  A3: 'Read List A aloud again, then record recalled words.',
+  A4: 'Read List A aloud again, then record recalled words.',
+  A5: 'Read List A aloud one final time for learning trials, then record recalled words.',
+  B1: 'Read List B aloud once, then record recalled words from List B.',
+  A6: 'Do not read any list now. Ask for immediate recall of the original List A and record responses.',
+  A7: 'Do not read any list now. Ask for delayed recall of the original List A and record responses.'
+};
+
 const CSV_COLUMNS = [
   { header: 'participantId', getValue: (payload, trial) => payload.participant.participantId },
   { header: 'group', getValue: (payload, trial) => payload.participant.group },
@@ -130,6 +141,7 @@ const submissionStatus = document.getElementById('submissionStatus');
 const summaryTableWrap = document.getElementById('summaryTableWrap');
 const downloadJsonBtn = document.getElementById('downloadJsonBtn');
 const downloadCsvBtn = document.getElementById('downloadCsvBtn');
+const scoreSheetWrap = document.getElementById('scoreSheetWrap');
 
 setupForm.addEventListener('submit', (event) => {
   event.preventDefault();
@@ -220,6 +232,7 @@ function renderCurrentStep() {
 
   trialCounter.textContent = `Step ${appState.flowIndex + 1} / ${RAVLT_FLOW.length}`;
   phaseTitle.textContent = step.label;
+  renderScoreSheet();
 
   if (step.code === 'DELAY') {
     enterDelayStep();
@@ -231,8 +244,7 @@ function renderCurrentStep() {
   clearTrialBtn.disabled = false;
   nextTrialBtn.disabled = false;
 
-  phaseInstruction.textContent =
-    'Read the list aloud, then click each recalled word as the participant answers. Click “Save trial & next” when done.';
+  phaseInstruction.textContent = getStepInstruction(step.code);
 
   renderWords();
   updateSelectedCount();
@@ -245,6 +257,7 @@ function enterDelayStep() {
   delayPanel.classList.remove('hidden');
   phaseInstruction.textContent =
     'Keep this page open while the participant performs other tasks. Click “Start delayed recall” when they return.';
+  renderScoreSheet();
 
   appState.delayStartedAt = new Date().toISOString();
   appState.delayStoppedAt = null;
@@ -283,6 +296,32 @@ function renderWords() {
 
 function updateSelectedCount() {
   selectedCount.textContent = String(appState.selectedWords.size);
+}
+
+function getStepInstruction(code) {
+  return (
+    INSTRUCTIONS_BY_CODE[code] ||
+    'Record recalled words for this trial, then click “Save trial & next”.'
+  );
+}
+
+function renderScoreSheet() {
+  const scoringSteps = RAVLT_FLOW.filter((step) => step.code !== 'DELAY');
+  const currentCode = RAVLT_FLOW[appState.flowIndex]?.code;
+  const rows = scoringSteps
+    .map((step) => {
+      const savedTrial = appState.trials.find((trial) => trial.code === step.code);
+      const rowClass = step.code === currentCode ? ' class="current-row"' : '';
+      return `<tr${rowClass}><td>${step.code}</td><td>${step.list?.toUpperCase() || ''}</td><td>${
+        savedTrial?.score ?? ''
+      }</td><td>${savedTrial?.recalledWords.join('; ') ?? ''}</td></tr>`;
+    })
+    .join('');
+
+  scoreSheetWrap.innerHTML =
+    '<table class="score-sheet"><thead><tr><th>Trial</th><th>List</th><th>Score</th><th>Recalled words</th></tr></thead><tbody>' +
+    rows +
+    '</tbody></table>';
 }
 
 function stopDelayTimer() {
