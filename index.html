@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RAVLT Assessment Tool</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <h1>RAVLT Assessment Tool</h1>
+
+      <section id="setupSection" class="card">
+        <h2>Participant Setup</h2>
+        <form id="setupForm" class="form-grid">
+          <label>
+            Participant ID
+            <input id="participantId" name="participantId" required />
+          </label>
+
+          <label>
+            Group
+            <input id="group" name="group" required />
+          </label>
+
+          <label>
+            Session
+            <input id="session" name="session" required />
+          </label>
+
+          <label>
+            Time of day
+            <input id="timeOfDay" name="timeOfDay" required placeholder="e.g. morning" />
+          </label>
+
+          <label>
+            Word list version
+            <select id="listVersion" name="listVersion" required>
+              <option value="">Select version</option>
+              <option value="v1">v1</option>
+              <option value="v2">v2</option>
+            </select>
+          </label>
+
+          <div class="form-actions">
+            <button type="submit">Start Assessment</button>
+          </div>
+        </form>
+      </section>
+
+      <section id="assessmentSection" class="card hidden">
+        <div class="header-row">
+          <h2 id="phaseTitle"></h2>
+          <span id="trialCounter" class="badge"></span>
+        </div>
+
+        <p id="phaseInstruction" class="instruction"></p>
+
+        <div id="wordButtons" class="word-grid"></div>
+
+        <div id="delayPanel" class="delay-panel hidden">
+          <p>Delay running while participant completes other tasks.</p>
+          <p>Elapsed delay: <strong id="delayTimer">00:00</strong></p>
+          <button id="startDelayedRecallBtn" type="button">Start delayed recall</button>
+        </div>
+
+        <div class="footer-row">
+          <span>Selected this trial: <strong id="selectedCount">0</strong></span>
+          <div class="footer-actions">
+            <button id="clearTrialBtn" type="button">Clear trial</button>
+            <button id="nextTrialBtn" type="button">Save trial & next</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="summarySection" class="card hidden">
+        <h2>Assessment Complete</h2>
+        <p id="summaryMeta"></p>
+        <p id="submissionStatus" class="status-message"></p>
+        <div id="summaryTableWrap"></div>
+        <div class="summary-actions">
+          <button id="downloadJsonBtn" type="button">Download JSON</button>
+          <button id="downloadCsvBtn" type="button">Download CSV</button>
+        </div>
+      </section>
+    </main>
+
+    <script src="./script.js"></script>
+  </body>
+</html>
