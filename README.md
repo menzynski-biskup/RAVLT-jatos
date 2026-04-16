@@ -19,7 +19,7 @@ Standalone RAVLT assessment interface for use in JATOS/Mindprobe sessions.
 
 ## Run locally
 
-Open `/home/runner/work/RAVLT-jatos/RAVLT-jatos/index.html` in a browser.
+Open `index.html` in a browser from the project directory.
 
 ## Data output
 
