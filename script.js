@@ -85,15 +85,33 @@ const RAVLT_FLOW = [
   { code: 'A7', list: 'a', label: 'Delayed Recall (List A)' }
 ];
 
+const REPEATED_TRIAL_PROMPT =
+  'Now I am going to read the same words again, and once again when I stop I want you to tell me as many words as you can remember, including words you said just now, at the first trial. It doesn’t matter in what order you say them. Just say as many words as you can remember from the list whether or not you said them already at previous attempts.';
+
 const INSTRUCTIONS_BY_CODE = {
-  A1: 'I am going to read a list of words. Listen carefully, for when I stop you are to repeat back as many words as you can remember. It doesn’t matter in what order you repeat them. Just try to remember as many as you can. Read List A with ~1-second interval between words. Do not give feedback on correct responses, repetitions, or errors.',
-  A2: 'Now I am going to read the same words again, and once again when I stop I want you to tell me as many words as you can remember, including words you said just now, at the first trial. It doesn’t matter in what order you say them. Just say as many words as you can remember from the list whether or not you said them already at previous attempts. Repeat this same instruction for Trials 3 through 5.',
-  A3: 'Use the Trial 2 instruction and read List A again.',
-  A4: 'Use the Trial 2 instruction and read List A again.',
-  A5: 'Use the Trial 2 instruction and read List A again.',
-  B1: 'Now I’m going to read a second list of words. Listen carefully, for when I stop you are to repeat back as many words as you can remember. It doesn’t matter in what order you repeat them. Just try to remember as many as you can.',
-  A6: 'Now tell me all the words that you can remember from the first list.',
-  A7: 'A while ago, I read a list of words to you several times, and you had to repeat back the words. Tell me the words from that list.'
+  A1: {
+    participant:
+      'I am going to read a list of words. Listen carefully, for when I stop you are to repeat back as many words as you can remember. It doesn’t matter in what order you repeat them. Just try to remember as many as you can.',
+    examiner:
+      'Read List A with ~1-second interval between words. Do not give feedback on correct responses, repetitions, or errors.'
+  },
+  A2: {
+    participant: REPEATED_TRIAL_PROMPT,
+    examiner: 'Use this same participant instruction for Trials 3 through 5 (A3, A4, A5).'
+  },
+  A3: { participant: REPEATED_TRIAL_PROMPT, examiner: 'Read List A again.' },
+  A4: { participant: REPEATED_TRIAL_PROMPT, examiner: 'Read List A again.' },
+  A5: { participant: REPEATED_TRIAL_PROMPT, examiner: 'Read List A again.' },
+  B1: {
+    participant:
+      'Now I’m going to read a second list of words. Listen carefully, for when I stop you are to repeat back as many words as you can remember. It doesn’t matter in what order you repeat them. Just try to remember as many as you can.',
+    examiner: 'Read List B with ~1-second interval between words.'
+  },
+  A6: { participant: 'Now tell me all the words that you can remember from the first list.' },
+  A7: {
+    participant:
+      'A while ago, I read a list of words to you several times, and you had to repeat back the words. Tell me the words from that list.'
+  }
 };
 
 const CSV_COLUMNS = [
@@ -305,10 +323,17 @@ function updateSelectedCount() {
 }
 
 function getStepInstruction(code) {
-  return (
-    INSTRUCTIONS_BY_CODE[code] ||
-    'Record recalled words for this trial, then click “Save trial & next”.'
-  );
+  const instruction = INSTRUCTIONS_BY_CODE[code];
+  if (!instruction) {
+    return 'Record recalled words for this trial, then click “Save trial & next”.';
+  }
+  if (typeof instruction === 'string') {
+    return instruction;
+  }
+  if (!instruction.examiner) {
+    return instruction.participant;
+  }
+  return `Participant: ${instruction.participant}\nExaminer: ${instruction.examiner}`;
 }
 
 function renderScoreSheet() {

@@ -94,6 +94,7 @@ button:disabled {
 
 .instruction {
   margin: 12px 0;
+  white-space: pre-line;
 }
 
 .score-sheet-wrap {
