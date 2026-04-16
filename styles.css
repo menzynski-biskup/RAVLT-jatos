@@ -141,24 +141,27 @@ button:disabled {
 }
 
 .table-word-btn {
-  background: none;
-  border: none;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
   color: #1f2937;
-  font-size: 13px;
-  font-weight: 400;
-  padding: 2px 4px;
-  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 7px 10px;
+  border-radius: 6px;
   cursor: pointer;
   width: 100%;
-  text-align: left;
+  text-align: center;
+  transition: background 0.1s, border-color 0.1s;
 }
 
 .table-word-btn:hover {
   background: #dbeafe;
+  border-color: #93c5fd;
 }
 
 .table-word-btn.selected {
   background: #16a34a;
+  border-color: #15803d;
   color: #fff;
   font-weight: 600;
 }
@@ -181,7 +184,7 @@ button:disabled {
 .score-sheet th,
 .score-sheet td {
   border: 1px solid #d1d5db;
-  padding: 6px 8px;
+  padding: 5px 8px;
   text-align: left;
   font-size: 13px;
 }
@@ -189,11 +192,12 @@ button:disabled {
 .score-sheet .order-cell,
 .score-sheet .sum-cell {
   text-align: center;
-  min-width: 44px;
+  min-width: 36px;
 }
 
 .score-sheet .word-cell {
-  padding: 2px 4px;
+  padding: 4px 6px;
+  min-width: 110px;
 }
 
 .score-sheet .current-cell {
@@ -212,21 +216,36 @@ button:disabled {
 
 .word-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
   margin-bottom: 12px;
 }
 
 .word-btn {
-  background: #fff;
+  background: #f8fafc;
   color: #1f2937;
   border: 1px solid #cbd5e1;
+  font-size: 16px;
+  font-weight: 500;
+  padding: 18px 10px;
+  text-align: center;
+  border-radius: 10px;
+  transition: background 0.1s, border-color 0.1s;
+}
+
+.word-btn:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
 }
 
 .word-btn.selected {
   background: #16a34a;
   border-color: #15803d;
   color: #fff;
+}
+
+.word-btn.selected:hover {
+  background: #15803d;
 }
 
 .delay-panel {

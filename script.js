@@ -289,9 +289,11 @@ function renderCurrentStep() {
   renderInstruction(step.code);
 
   if (step.list === 'b') {
+    scoreSheetWrap.classList.add('hidden');
     wordButtons.classList.remove('hidden');
     renderWords();
   } else {
+    scoreSheetWrap.classList.remove('hidden');
     wordButtons.classList.add('hidden');
   }
 
@@ -300,6 +302,7 @@ function renderCurrentStep() {
 
 function enterDelayStep() {
   wordButtons.classList.add('hidden');
+  scoreSheetWrap.classList.remove('hidden');
   clearTrialBtn.disabled = true;
   nextTrialBtn.disabled = true;
   delayPanel.classList.remove('hidden');
